@@ -57,11 +57,11 @@ Este conjunto de simuladores fue desarrollado como trabajo práctico para la mat
 
 Autores:
 
-Ignacio Parra
+- Ignacio Parra
 
-Santiago Guglielmone
+- Santiago Guglielmone
 
-Gonzalo Mata
+- Gonzalo Mata
 ---
-##📩 Contacto
+## 📩 Contacto
 Para consultas o sugerencias, podés comunicarte con cualquiera de los autores.
