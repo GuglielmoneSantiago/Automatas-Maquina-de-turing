@@ -50,4 +50,17 @@ Ejecutá cualquiera de los archivos `.py` en tu entorno local con Python:
 python simulador_turing.py
 python simulador_nfa.py
 python simulador_dfa.py
+---
+## 📖 Créditos Académicos
+Este conjunto de simuladores fue desarrollado como trabajo práctico para la materia Teoría de la Computación de la carrera Ingeniería en Sistemas.
 
+Autores:
+
+Ignacio Parra
+
+Santiago Guglielmone
+
+Gonzalo Mata
+---
+##📩 Contacto
+Para consultas o sugerencias, podés comunicarte con cualquiera de los autores.
