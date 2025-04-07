@@ -50,7 +50,6 @@ class NFA_GUI:
         self.create_widgets()
 
     def create_widgets(self):
-        # Definición del AFND
         self.states = {'q0', 'q1', 'q2', 'q3', 'q4'}
         self.alphabet = {'0', '1', 'a', 'b'}
         self.start_state = 'q0'
@@ -87,8 +86,7 @@ class NFA_GUI:
         self.prev_button = tk.Button(self.root, text="Paso Anterior", command=self.prev_step, state=tk.DISABLED)
         self.prev_button.pack(pady=5)
 
-        # Botón de reinicio
-        self.reset_button = tk.Button(self.root, text="Reiniciar Simulación", command=self.reset_simulation)
+        self.reset_button = tk.Button(self.root, text="Reiniciar", command=self.reset_simulation, state=tk.DISABLED)
         self.reset_button.pack(pady=5)
 
         self.output = tk.Label(self.root, text="", font=("Courier", 20))
@@ -96,6 +94,9 @@ class NFA_GUI:
 
         self.state_label = tk.Label(self.root, text="", font=("Arial", 14))
         self.state_label.pack()
+
+        self.reason_label = tk.Label(self.root, text="", font=("Arial", 12), fg="red")
+        self.reason_label.pack(pady=5)
 
         self.transition_table_label = tk.Label(self.root, text="Tabla de Transiciones:", font=("Arial", 12, "bold"))
         self.transition_table_label.pack(pady=5)
@@ -107,14 +108,8 @@ class NFA_GUI:
             self.transition_table.column(col, width=120, anchor="center")
         self.transition_table.pack(pady=10)
 
-        self.populate_transition_table()
-
-    def populate_transition_table(self):
-        for row in self.transition_table.get_children():
-            self.transition_table.delete(row)
-
     def start_simulation(self):
-        tape_input = self.entry.get().strip()
+        tape_input = self.input_string.get().strip()
         if not tape_input:
             return
 
@@ -124,8 +119,9 @@ class NFA_GUI:
         self.update_output(initial_states)
         self.next_button.config(state=tk.NORMAL)
         self.prev_button.config(state=tk.DISABLED)
-        self.input_string.set(tape_input)
+        self.reset_button.config(state=tk.NORMAL)
         self.current_step_index = 0
+        self.reason_label.config(text="")
         self.populate_simulation_steps_table()
 
     def next_step(self):
@@ -134,47 +130,32 @@ class NFA_GUI:
             symbol = input_str[self.current_step_index]
             previous_states = self.simulation_steps[-1][4]
 
-            if previous_states is None:
-                self.output.config(text="Error durante la simulación.")
-                self.next_button.config(state=tk.DISABLED)
-                return
-
             if symbol not in self.nfa.alphabet:
                 self.output.config(text=f"Símbolo '{symbol}' no en el alfabeto.")
                 self.next_button.config(state=tk.DISABLED)
                 return
 
             next_states, used_transitions = self.nfa.simulate_step(previous_states, symbol)
-
-            if next_states is None:
-                self.output.config(text="No hay transición definida.")
+            if next_states is None or not next_states:
+                self.output.config(text=f"Cadena rechazada en símbolo '{symbol}'")
+                self.reason_label.config(text="No hay transición válida desde los estados actuales.")
                 self.next_button.config(state=tk.DISABLED)
                 return
 
-            transition_str = ""
-            if used_transitions:
-                transition_str = ", ".join([f"({state}, '{sym}') -> {next_s}" for (state, sym), next_s in used_transitions])
-
+            transition_str = ", ".join([f"({s}, '{a}') -> {d}" for (s, a), d in used_transitions])
             self.simulation_steps.append((f"Paso {self.current_step_index + 1}", symbol, previous_states, transition_str, next_states))
             self.update_output(next_states)
             self.current_step_index += 1
             self.populate_simulation_steps_table()
 
             if self.current_step_index == len(input_str):
-                final_states = next_states
-                if any(state in self.nfa.accept_states for state in final_states):
-                    self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(final_states))}")
+                if any(state in self.nfa.accept_states for state in next_states):
+                    self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(next_states))}")
+                    self.reason_label.config(text="")
                 else:
-                    self.state_label.config(text=f"Cadena rechazada. Estados finales: {sorted(list(final_states))}")
+                    self.state_label.config(text=f"Cadena rechazada. Estados finales: {sorted(list(next_states))}")
+                    self.reason_label.config(text="Ninguno de los estados finales es de aceptación.")
                 self.next_button.config(state=tk.DISABLED)
-        elif self.current_step_index == len(input_str):
-            final_states = self.simulation_steps[-1][4]
-            if final_states:
-                if any(state in self.nfa.accept_states for state in final_states):
-                    self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(final_states))}")
-                else:
-                    self.state_label.config(text=f"Cadena rechazada. Estados finales: {sorted(list(final_states))}")
-            self.next_button.config(state=tk.DISABLED)
 
         self.prev_button.config(state=tk.NORMAL)
 
@@ -184,15 +165,21 @@ class NFA_GUI:
             self.update_output(self.simulation_steps[self.current_step_index][4])
             self.populate_simulation_steps_table()
             self.next_button.config(state=tk.NORMAL)
+            self.reason_label.config(text="")
             if self.current_step_index == 0:
-                initial_states = self.nfa.get_epsilon_closure({self.nfa.start_state})
-                self.update_output(initial_states)
                 self.prev_button.config(state=tk.DISABLED)
-        elif self.current_step_index == 0:
-            initial_states = self.nfa.get_epsilon_closure({self.nfa.start_state})
-            self.update_output(initial_states)
-            self.prev_button.config(state=tk.DISABLED)
-            self.next_button.config(state=tk.NORMAL)
+
+    def reset_simulation(self):
+        self.input_string.set("")
+        self.simulation_steps = []
+        self.current_step_index = -1
+        self.output.config(text="")
+        self.state_label.config(text="")
+        self.reason_label.config(text="")
+        self.populate_simulation_steps_table()
+        self.next_button.config(state=tk.DISABLED)
+        self.prev_button.config(state=tk.DISABLED)
+        self.reset_button.config(state=tk.DISABLED)
 
     def update_output(self, current_states):
         self.output.config(text=f"Estados actuales: {sorted(list(current_states))}")
@@ -204,19 +191,6 @@ class NFA_GUI:
         for step_data in self.simulation_steps:
             self.transition_table.insert("", "end", values=step_data)
 
-    def reset_simulation(self):
-        self.input_string.set("")
-        self.entry.delete(0, tk.END)
-        self.entry.focus_set()
-        self.simulation_steps = []
-        self.current_step_index = -1
-        self.populate_transition_table()
-        self.output.config(text="")
-        self.state_label.config(text="")
-        self.next_button.config(state=tk.DISABLED)
-        self.prev_button.config(state=tk.DISABLED)
-
-# Ejecutar la app
 if __name__ == "__main__":
     root = tk.Tk()
     app = NFA_GUI(root)
