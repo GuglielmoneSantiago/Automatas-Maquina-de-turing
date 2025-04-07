@@ -4,19 +4,6 @@ from tkinter import messagebox
 
 class NFA:
     def __init__(self, states, alphabet, start_state, accept_states, transitions):
-        """
-        Inicializa el Autómata Finito No Determinista (AFND).
-
-        Args:
-            states (set): Conjunto de estados.
-            alphabet (set): Conjunto de símbolos del alfabeto de entrada.
-            start_state (str): Estado inicial del autómata.
-            accept_states (set): Conjunto de estados de aceptación.
-            transitions (dict): Función de transición, un diccionario donde la clave es una tupla
-                                (estado actual, símbolo de entrada) y el valor es un conjunto de
-                                posibles siguientes estados. Para transiciones epsilon (sin consumir entrada),
-                                la clave es (estado actual, None).
-        """
         self.states = states
         self.alphabet = alphabet
         self.start_state = start_state
@@ -24,9 +11,6 @@ class NFA:
         self.transitions = transitions
 
     def get_epsilon_closure(self, states):
-        """
-        Calcula la clausura epsilon de un conjunto de estados.
-        """
         closure = set(states)
         stack = list(states)
         while stack:
@@ -39,9 +23,6 @@ class NFA:
         return frozenset(closure)
 
     def simulate_step(self, current_states, symbol):
-        """
-        Realiza un paso de la simulación del AFND.
-        """
         if symbol not in self.alphabet and symbol is not None:
             return None
 
@@ -69,30 +50,32 @@ class NFA_GUI:
         self.create_widgets()
 
     def create_widgets(self):
-        # Definición del AFND con alfabeto {0, 1, a, b}
-        self.states = {'q0', 'q1', 'q2', 'q3'}
+        # Definición del AFND
+        self.states = {'q0', 'q1', 'q2', 'q3', 'q4'}
         self.alphabet = {'0', '1', 'a', 'b'}
         self.start_state = 'q0'
-        self.accept_states = {'q3'}
+        self.accept_states = {'q3', 'q4'}
         self.transitions = {
             ('q0', '0'): {'q1'},
             ('q0', 'a'): {'q2'},
             ('q1', '1'): {'q3'},
-            ('q2', 'b'): {'q3'},
-            ('q1', '0'): {'q1'},
-            ('q2', 'a'): {'q2'},
+            ('q2', 'b'): {'q4'},
+            ('q1', '0'): {'q1', 'q2'},
+            ('q2', 'a'): {'q2', 'q1'},
             ('q0', None): {'q0'},
             ('q3', '0'): {'q3'},
-            ('q3', '1'): {'q3'},
-            ('q3', 'a'): {'q3'},
-            ('q3', 'b'): {'q3'},
+            ('q3', '1'): {'q4'},
+            ('q4', 'a'): {'q3'},
+            ('q4', 'b'): {'q4'},
+            ('q1', 'a'): set(),
+            ('q2', '0'): set(),
         }
         self.nfa = NFA(self.states, self.alphabet, self.start_state, self.accept_states, self.transitions)
 
         self.label = tk.Label(self.root, text="Cadena de entrada (ej: 01ab):")
         self.label.pack()
 
-        self.entry = tk.Entry(self.root, font=("Courier", 16))
+        self.entry = tk.Entry(self.root, font=("Courier", 16), textvariable=self.input_string)
         self.entry.pack()
 
         self.start_button = tk.Button(self.root, text="Iniciar Simulación", command=self.start_simulation)
@@ -104,13 +87,16 @@ class NFA_GUI:
         self.prev_button = tk.Button(self.root, text="Paso Anterior", command=self.prev_step, state=tk.DISABLED)
         self.prev_button.pack(pady=5)
 
+        # Botón de reinicio
+        self.reset_button = tk.Button(self.root, text="Reiniciar Simulación", command=self.reset_simulation)
+        self.reset_button.pack(pady=5)
+
         self.output = tk.Label(self.root, text="", font=("Courier", 20))
         self.output.pack(pady=10)
 
         self.state_label = tk.Label(self.root, text="", font=("Arial", 14))
         self.state_label.pack()
 
-        # Tabla de transiciones
         self.transition_table_label = tk.Label(self.root, text="Tabla de Transiciones:", font=("Arial", 12, "bold"))
         self.transition_table_label.pack(pady=5)
 
@@ -126,8 +112,6 @@ class NFA_GUI:
     def populate_transition_table(self):
         for row in self.transition_table.get_children():
             self.transition_table.delete(row)
-        sorted_transitions = sorted(self.nfa.transitions.items(), key=lambda item: (item[0][0], item[0][1] or ''))
-        # No vamos a mostrar todas las reglas estáticas aquí, sino los pasos de la simulación
 
     def start_simulation(self):
         tape_input = self.entry.get().strip()
@@ -148,7 +132,7 @@ class NFA_GUI:
         input_str = self.input_string.get()
         if self.current_step_index < len(input_str):
             symbol = input_str[self.current_step_index]
-            previous_states = self.simulation_steps[-1][4]  # Obtener los estados del paso anterior
+            previous_states = self.simulation_steps[-1][4]
 
             if previous_states is None:
                 self.output.config(text="Error durante la simulación.")
@@ -177,10 +161,11 @@ class NFA_GUI:
             self.populate_simulation_steps_table()
 
             if self.current_step_index == len(input_str):
-                if any(state in self.nfa.accept_states for state in next_states):
-                    self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(next_states))}")
+                final_states = next_states
+                if any(state in self.nfa.accept_states for state in final_states):
+                    self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(final_states))}")
                 else:
-                    self.state_label.config(text=f"Cadena rechazada. Estados finales: {sorted(list(next_states))}")
+                    self.state_label.config(text=f"Cadena rechazada. Estados finales: {sorted(list(final_states))}")
                 self.next_button.config(state=tk.DISABLED)
         elif self.current_step_index == len(input_str):
             final_states = self.simulation_steps[-1][4]
@@ -218,6 +203,18 @@ class NFA_GUI:
             self.transition_table.delete(row)
         for step_data in self.simulation_steps:
             self.transition_table.insert("", "end", values=step_data)
+
+    def reset_simulation(self):
+        self.input_string.set("")
+        self.entry.delete(0, tk.END)
+        self.entry.focus_set()
+        self.simulation_steps = []
+        self.current_step_index = -1
+        self.populate_transition_table()
+        self.output.config(text="")
+        self.state_label.config(text="")
+        self.next_button.config(state=tk.DISABLED)
+        self.prev_button.config(state=tk.DISABLED)
 
 # Ejecutar la app
 if __name__ == "__main__":
