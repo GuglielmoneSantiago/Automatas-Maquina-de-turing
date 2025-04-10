@@ -46,6 +46,8 @@ class NFA_GUI:
         self.input_string = tk.StringVar()
         self.simulation_steps = []
         self.current_step_index = -1
+        self.base_input = ""
+        self.infinite_mode = tk.BooleanVar()
 
         self.create_widgets()
 
@@ -76,6 +78,9 @@ class NFA_GUI:
 
         self.entry = tk.Entry(self.root, font=("Courier", 16), textvariable=self.input_string)
         self.entry.pack()
+
+        self.infinite_checkbox = tk.Checkbutton(self.root, text="Modo cadena infinita", variable=self.infinite_mode)
+        self.infinite_checkbox.pack(pady=5)
 
         self.start_button = tk.Button(self.root, text="Iniciar Simulación", command=self.start_simulation)
         self.start_button.pack(pady=5)
@@ -110,8 +115,10 @@ class NFA_GUI:
 
     def start_simulation(self):
         tape_input = self.input_string.get().strip()
-        if not tape_input:
+        if not tape_input and not self.infinite_mode.get():
             return
+
+        self.base_input = tape_input if not self.infinite_mode.get() else (tape_input or "01ab")
 
         self.simulation_steps = []
         initial_states = self.nfa.get_epsilon_closure({self.nfa.start_state})
@@ -125,29 +132,36 @@ class NFA_GUI:
         self.populate_simulation_steps_table()
 
     def next_step(self):
-        input_str = self.input_string.get()
-        if self.current_step_index < len(input_str):
+        if self.infinite_mode.get():
+            symbol = self.base_input[self.current_step_index % len(self.base_input)]
+        else:
+            input_str = self.input_string.get()
+            if self.current_step_index >= len(input_str):
+                return
             symbol = input_str[self.current_step_index]
-            previous_states = self.simulation_steps[-1][4]
 
-            if symbol not in self.nfa.alphabet:
-                self.output.config(text=f"Símbolo '{symbol}' no en el alfabeto.")
-                self.next_button.config(state=tk.DISABLED)
-                return
+        previous_states = self.simulation_steps[-1][4]
 
-            next_states, used_transitions = self.nfa.simulate_step(previous_states, symbol)
-            if next_states is None or not next_states:
-                self.output.config(text=f"Cadena rechazada en símbolo '{symbol}'")
-                self.reason_label.config(text="No hay transición válida desde los estados actuales.")
-                self.next_button.config(state=tk.DISABLED)
-                return
+        if symbol not in self.nfa.alphabet:
+            self.output.config(text=f"Símbolo '{symbol}' no en el alfabeto.")
+            self.next_button.config(state=tk.DISABLED)
+            return
 
-            transition_str = ", ".join([f"({s}, '{a}') -> {d}" for (s, a), d in used_transitions])
-            self.simulation_steps.append((f"Paso {self.current_step_index + 1}", symbol, previous_states, transition_str, next_states))
-            self.update_output(next_states)
-            self.current_step_index += 1
-            self.populate_simulation_steps_table()
+        next_states, used_transitions = self.nfa.simulate_step(previous_states, symbol)
+        if next_states is None or not next_states:
+            self.output.config(text=f"Cadena rechazada en símbolo '{symbol}'")
+            self.reason_label.config(text="No hay transición válida desde los estados actuales.")
+            self.next_button.config(state=tk.DISABLED)
+            return
 
+        transition_str = ", ".join([f"({s}, '{a}') -> {d}" for (s, a), d in used_transitions])
+        self.simulation_steps.append((f"Paso {self.current_step_index + 1}", symbol, previous_states, transition_str, next_states))
+        self.update_output(next_states)
+        self.current_step_index += 1
+        self.populate_simulation_steps_table()
+
+        if not self.infinite_mode.get():
+            input_str = self.input_string.get()
             if self.current_step_index == len(input_str):
                 if any(state in self.nfa.accept_states for state in next_states):
                     self.state_label.config(text=f"Cadena aceptada. Estados finales: {sorted(list(next_states))}")
