@@ -49,10 +49,9 @@ Representa un AFD que reconoce cadenas que contienen al menos una vez el patrón
 Ejecutá cualquiera de los archivos `.py` en tu entorno local con Python:
 
 ```bash
-python simulador_turing.py
-python simulador_nfa.py
-python simulador_dfa.py
-python simulador_dfa_patron01.py
+python DFA.py
+python AFND.py
+python MáquinaDeTuring.py
 ```
 
 ---
