@@ -1,8 +1,8 @@
 # Simuladores de Autómatas y Máquina de Turing
 
-Este repositorio contiene tres simuladores interactivos desarrollados con Python y Tkinter, diseñados para representar visualmente el funcionamiento de distintos modelos de cómputo:
+Este repositorio contiene simuladores interactivos desarrollados con Python y Tkinter, diseñados para representar visualmente el funcionamiento de distintos modelos de cómputo:
 
-- 🧠 **Máquina de Turing**
+- 🧐 **Máquina de Turing**
 - 🔀 **Autómata Finito No Determinista (AFND / NFA)**
 - ✅ **Autómata Finito Determinista (AFD / DFA)**
 
@@ -26,12 +26,14 @@ Simula un AFND con posibilidad de retroceder y avanzar paso a paso. Muestra los 
 - Tabla de pasos con transiciones utilizadas.
 
 ### 3. Simulador de Autómata Finito Determinista (AFD)
-Representa un AFD que valida cadenas con **cantidad par de ceros**. Permite observar el estado actual en cada paso de la cadena ingresada.
+Representa un AFD que reconoce cadenas que contienen al menos una vez el patrón "01".
 
 **Características:**
-- Validación de cadenas binarias (0 y 1).
-- Simulación paso a paso.
-- Indicación de aceptación o rechazo.
+- Reconocimiento de cadenas que contienen "01" en cualquier posición.
+- Visualización de la cinta de entrada con separación de símbolos.
+- Resaltado dinámico del símbolo actual.
+- Estado actual mostrado en cada paso.
+- Tabla de transiciones extendida con columnas: Estado, Símbolo, Nuevo Estado, Escritura, Movimiento.
 
 ---
 
@@ -50,18 +52,23 @@ Ejecutá cualquiera de los archivos `.py` en tu entorno local con Python:
 python simulador_turing.py
 python simulador_nfa.py
 python simulador_dfa.py
+python simulador_dfa_patron01.py
 ```
+
 ---
-## 📖 Créditos Académicos
-Este conjunto de simuladores fue desarrollado como trabajo práctico para la materia Teoría de la Computación de la carrera Ingeniería en Sistemas.
 
-Autores:
+## 📚 Créditos Académicos
 
+Este conjunto de simuladores fue desarrollado como trabajo práctico para la materia **Teoría de la Computación** de la carrera **Ingeniería en Sistemas**.
+
+**Autores:**
 - Ignacio Parra
-
 - Santiago Guglielmone
-
 - Gonzalo Mata
+
 ---
+
 ## 📩 Contacto
+
 Para consultas o sugerencias, podés comunicarte con cualquiera de los autores.
+
